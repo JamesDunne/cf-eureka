@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 )
@@ -33,26 +34,69 @@ func execCF(route string, result interface{}) error {
 }
 
 func main() {
-	var results map[string]interface{}
+	args := os.Args[1:]
+	if len(args) == 0 {
+		fmt.Fprintln(os.Stderr, "Expected <space name> argument to query routes for")
+		os.Exit(1)
+		return
+	}
 
+	// Create JSON encoder to write to stdout:
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetEscapeHTML(false)
 	enc.SetIndent("", "  ")
 
+	// Get space name from first argument:
+	spaceName := args[0]
+
+	// Look for spaces with the name specified:
+	var spaceResults map[string]interface{}
+	execCF("/v2/spaces?q=name:"+url.QueryEscape(spaceName), &spaceResults)
+
+	totalResults := spaceResults["total_results"].(float64)
+	if totalResults == 0 {
+		fmt.Fprintf(os.Stderr, "No spaces found matching name='%s'\n", spaceName)
+		os.Exit(2)
+		return
+	}
+	if totalResults > 1 {
+		fmt.Fprintf(os.Stderr, "Too many spaces found matching name='%s'\n", spaceName)
+		os.Exit(2)
+		return
+	}
+
+	spaceMetadata := spaceResults["resources"].([]interface{})[0].(map[string]interface{})["metadata"].(map[string]interface{})
+	spaceGuid := spaceMetadata["guid"].(string)
+
+	// This is "dev" for "nu"
+	//spaceGuid := "97512eba-2f24-43ce-86f4-f96d3a459ed0"
+
+	appMap := make(map[string]string)
+
 	// Get all the NU space's routes:
-	nextURL := "/v2/spaces/97512eba-2f24-43ce-86f4-f96d3a459ed0/routes?results-per-page=100&page=1&inline-relations-depth=1"
+	nextURL := fmt.Sprintf(
+		"/v2/spaces/%s/routes?results-per-page=100&page=1&inline-relations-depth=1",
+		spaceGuid,
+	)
+
 	for nextURL != "" {
+		var results map[string]interface{}
 		if err := execCF(nextURL, &results); err != nil {
 			panic(err)
 		}
 
 		resources := results["resources"].([]interface{})
 		for _, r := range resources {
-			_ = enc
 			//enc.Encode(r)
 			//fmt.Print("\n")
 
 			rs := r.(map[string]interface{})
+
+			// entity.apps[0].entity.name
+			//       .host
+			//       .port
+			//       .path
+			// entity.domain.entity.name
 
 			entity := rs["entity"].(map[string]interface{})
 			domainEntity := entity["domain"].(map[string]interface{})["entity"].(map[string]interface{})
@@ -68,12 +112,10 @@ func main() {
 			appHost := entity["host"].(string)
 			domainName := domainEntity["name"].(string)
 
-			fmt.Printf("\t%s: %s.%s\n", appName, appHost, domainName)
-			// entity.apps[0].entity.name
-			//       .host
-			//       .port
-			//       .path
-			// entity.domain.entity.name
+			//fmt.Printf("\t%s: %s.%s\n", appName, appHost, domainName)
+
+			// TODO: include port and path maybe?
+			appMap[appName] = fmt.Sprintf("%s.%s", appHost, domainName)
 		}
 
 		// Find next URL for paging:
@@ -81,5 +123,10 @@ func main() {
 			break
 		}
 		nextURL = results["next_url"].(string)
+	}
+
+	// Send final output as JSON to stdout:
+	if err := enc.Encode(appMap); err != nil {
+		panic(err)
 	}
 }
