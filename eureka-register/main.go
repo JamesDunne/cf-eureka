@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -65,6 +66,14 @@ func main() {
 			Path:   fmt.Sprintf("/eureka/v2/apps/%s", appName),
 		}
 
+		// Resolve the IPv4 address of the host for registration with eureka:
+		ip, err := net.ResolveIPAddr("ip4", appHost)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s: failed to resolve IPv4 for host '%s': %v\n", appName, appHost, err)
+			continue
+		}
+		ipAddr := ip.String()
+
 		instanceId := uuid.NewV4().String()
 		register := map[string]interface{}{
 			"instance": map[string]interface{}{
@@ -77,6 +86,7 @@ func main() {
 					"@enabled": true,
 					"$":        "443",
 				},
+				"ipAddr":     ipAddr,
 				"app":        appName,
 				"instanceId": instanceId,
 				"dataCenterInfo": map[string]interface{}{
