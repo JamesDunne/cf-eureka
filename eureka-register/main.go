@@ -80,7 +80,7 @@ func main() {
 		h := fnv.New64a()
 		h.Write([]byte(hostPort))
 		instanceHash := hex.EncodeToString(h.Sum(nil))
-		instanceId := fmt.Sprintf("%s:%s", instanceHash, hostPort)
+		instanceId := fmt.Sprintf("%s:%s", instanceHash, appName)
 
 		register := map[string]interface{}{
 			"instance": map[string]interface{}{
