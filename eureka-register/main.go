@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"time"
 )
 
 func main() {
@@ -60,12 +61,8 @@ func main() {
 		panic(err)
 	}
 
-	for appName, appHost := range routesMap {
-		u := url.URL{
-			Scheme: "http",
-			Host:   fmt.Sprintf("%s:%s", eurekaHost, eurekaPort),
-			Path:   fmt.Sprintf("/eureka/v2/apps/%s", appName),
-		}
+	for k, v := range routesMap {
+		appName, appHost := k, v
 
 		// Resolve the IPv4 address of the host for registration with eureka:
 		ip, err := net.ResolveIPAddr("ip4", appHost)
@@ -123,8 +120,14 @@ func main() {
 
 		body := bytes.NewReader(b)
 
+		registerURL := url.URL{
+			Scheme: "http",
+			Host:   fmt.Sprintf("%s:%s", eurekaHost, eurekaPort),
+			Path:   fmt.Sprintf("/eureka/v2/apps/%s", appName),
+		}
+
 		// POST a body:
-		rsp, err := http.DefaultClient.Post(u.String(), "application/json", body)
+		rsp, err := http.DefaultClient.Post(registerURL.String(), "application/json", body)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s: %v\n", appName, err)
 			continue
@@ -138,5 +141,35 @@ func main() {
 		}
 
 		fmt.Printf("Registered %s at '%s'\n", appName, appHost)
+
+		heartbeatURL := url.URL{
+			Scheme: "http",
+			Host:   fmt.Sprintf("%s:%s", eurekaHost, eurekaPort),
+			Path:   fmt.Sprintf("/eureka/v2/apps/%s/%s", appName, instanceId),
+		}
+		hbReq, err := http.NewRequest("PUT", heartbeatURL.String(), nil)
+
+		// Every 30 seconds, update the status of this app:
+		ticker := time.NewTicker(time.Second * 30)
+		go func() {
+			for range ticker.C {
+				rsp, err := http.DefaultClient.Do(hbReq)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "%v\n", err)
+					continue
+				}
+				if rsp.StatusCode < 200 || rsp.StatusCode >= 300 {
+					fmt.Fprintf(os.Stderr, "%s: %v\n", appName, rsp.Status)
+					io.Copy(os.Stderr, rsp.Body)
+					fmt.Fprintln(os.Stderr)
+					continue
+				}
+				fmt.Printf("Heartbeat %s\n", appName)
+			}
+		}()
+	}
+
+	// Keep background goroutines alive for heartbeating.
+	for {
 	}
 }
