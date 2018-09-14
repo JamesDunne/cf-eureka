@@ -115,6 +115,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "%s: %v\n", appName, rsp.Status)
 			io.Copy(os.Stderr, rsp.Body)
 			fmt.Fprintln(os.Stderr)
+			continue
 		}
 
 		fmt.Printf("Registered %s at '%s'\n", appName, appHost)
