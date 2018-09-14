@@ -10,8 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-
-	"github.com/satori/go.uuid"
 )
 
 func main() {
@@ -74,7 +72,7 @@ func main() {
 		}
 		ipAddr := ip.String()
 
-		instanceId := uuid.NewV4().String()
+		instanceId := appName
 		register := map[string]interface{}{
 			"instance": map[string]interface{}{
 				"hostName": appHost,
@@ -96,8 +94,8 @@ func main() {
 				"metadata": map[string]interface{}{
 					"instanceId": instanceId,
 				},
-				"vipAddress":           "my.service.com",
-				"secureVipAddress":     "my.service.com",
+				"vipAddress":           appHost,
+				"secureVipAddress":     appHost,
 				"homePageUrl":          fmt.Sprintf("http://%s/", appHost),
 				"statusPageUrl":        fmt.Sprintf("http://%s/info", appHost),
 				"healthCheckUrl":       fmt.Sprintf("http://%s/health", appHost),
