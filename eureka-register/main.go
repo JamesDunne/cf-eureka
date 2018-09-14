@@ -84,9 +84,10 @@ func main() {
 
 		register := map[string]interface{}{
 			"instance": map[string]interface{}{
-				"id":         appName,
+				// "id":         appName,
 				"instanceId": instanceId,
 				"app":        appName,
+				"status":     "UP",
 				"hostName":   appHost,
 				"ipAddr":     ipAddr,
 				"port": map[string]interface{}{
@@ -104,8 +105,10 @@ func main() {
 				"metadata": map[string]interface{}{
 					"@class": "java.util.Collections$EmptyMap",
 				},
-				"vipAddress":       appHost,
-				"secureVipAddress": appHost,
+				// "vipAddress":       appHost,
+				"vipAddress": appName,
+				// "secureVipAddress": appHost,
+				"secureVipAddress": appName,
 				"homePageUrl":      fmt.Sprintf("http://%s/", appHost),
 				"statusPageUrl":    fmt.Sprintf("http://%s/info", appHost),
 				"healthCheckUrl":   fmt.Sprintf("http://%s/health", appHost),
