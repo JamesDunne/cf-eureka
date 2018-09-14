@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -77,7 +76,7 @@ func main() {
 
 		port := 80
 		hostPort := fmt.Sprintf("%s:%d", appHost, port)
-		instanceHash := base64.StdEncoding.EncodeToString(sha1.New().Sum([]byte(hostPort)))
+		instanceHash := base64.StdEncoding.EncodeToString([]byte(hostPort))
 		instanceId := fmt.Sprintf("%s:%s", instanceHash, hostPort)
 
 		register := map[string]interface{}{
