@@ -72,34 +72,36 @@ func main() {
 		}
 		ipAddr := ip.String()
 
-		instanceId := appName
+		port := 80
+
 		register := map[string]interface{}{
 			"instance": map[string]interface{}{
-				"hostName": appHost,
+				"id":         appName,
+				"instanceId": instanceId,
+				"app":        appName,
+				"hostName":   appHost,
+				"ipAddr":     ipAddr,
 				"port": map[string]interface{}{
 					"@enabled": true,
-					"$":        "80",
+					"$":        strconv.Itoa(port),
 				},
 				"securePort": map[string]interface{}{
-					"@enabled": true,
+					"@enabled": false,
 					"$":        "443",
 				},
-				"ipAddr":     ipAddr,
-				"app":        appName,
-				"instanceId": instanceId,
 				"dataCenterInfo": map[string]interface{}{
 					"@class": "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
 					"name":   "MyOwn",
 				},
 				"metadata": map[string]interface{}{
-					"instanceId": instanceId,
+					"@class": "java.util.Collections$EmptyMap",
 				},
-				"vipAddress":           appHost,
-				"secureVipAddress":     appHost,
-				"homePageUrl":          fmt.Sprintf("http://%s/", appHost),
-				"statusPageUrl":        fmt.Sprintf("http://%s/info", appHost),
-				"healthCheckUrl":       fmt.Sprintf("http://%s/health", appHost),
-				"secureHealthCheckUrl": fmt.Sprintf("http://%s/health", appHost),
+				"vipAddress":       appHost,
+				"secureVipAddress": appHost,
+				"homePageUrl":      fmt.Sprintf("http://%s/", appHost),
+				"statusPageUrl":    fmt.Sprintf("http://%s/info", appHost),
+				"healthCheckUrl":   fmt.Sprintf("http://%s/health", appHost),
+				// "secureHealthCheckUrl": fmt.Sprintf("http://%s/health", appHost),
 			},
 		}
 		b, err := json.Marshal(&register)
