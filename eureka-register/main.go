@@ -2,9 +2,10 @@ package main
 
 import (
 	"bytes"
-	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"io"
 	"io/ioutil"
 	"net"
@@ -76,7 +77,9 @@ func main() {
 
 		port := 80
 		hostPort := fmt.Sprintf("%s:%d", appHost, port)
-		instanceHash := base64.StdEncoding.EncodeToString([]byte(hostPort))
+		h := fnv.New64a()
+		h.Write([]byte(hostPort))
+		instanceHash := hex.EncodeToString(h.Sum(nil))
 		instanceId := fmt.Sprintf("%s:%s", instanceHash, hostPort)
 
 		register := map[string]interface{}{
