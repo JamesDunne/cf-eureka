@@ -84,7 +84,6 @@ func main() {
 
 		register := map[string]interface{}{
 			"instance": map[string]interface{}{
-				// "id":         appName,
 				"instanceId": instanceId,
 				"app":        appName,
 				"status":     "UP",
@@ -105,9 +104,8 @@ func main() {
 				"metadata": map[string]interface{}{
 					"@class": "java.util.Collections$EmptyMap",
 				},
-				// "vipAddress":       appHost,
-				"vipAddress": appName,
-				// "secureVipAddress": appHost,
+				// THIS IS VERY IMPORTANT!!! ALL SPRING-CLOUD SERVICES IDENTIFY SERVICES VIA VIPADDRESS!!!
+				"vipAddress":       appName,
 				"secureVipAddress": appName,
 				"homePageUrl":      fmt.Sprintf("http://%s/", appHost),
 				"statusPageUrl":    fmt.Sprintf("http://%s/info", appHost),
