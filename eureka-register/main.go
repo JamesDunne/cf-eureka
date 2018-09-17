@@ -170,6 +170,5 @@ func main() {
 	}
 
 	// Keep background goroutines alive for heartbeating.
-	for {
-	}
+	select {}
 }
