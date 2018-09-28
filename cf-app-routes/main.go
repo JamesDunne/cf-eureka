@@ -121,7 +121,13 @@ func main() {
 			appHost := entity["host"].(string)
 			domainName := domainEntity["name"].(string)
 
-			fmt.Fprintf(os.Stderr, "\t%s: '%s.%s'\n", appName, appHost, domainName)
+			fmt.Fprintf(os.Stderr, "    \"%s\": \"%s.%s\"\n", appName, appHost, domainName)
+
+			// Skip well-known apps since we don't want to register them in eureka:
+			if appName == "nu-edge-server" || appName == "ui-gateway" {
+				fmt.Fprintf(os.Stderr, "Not including '%s' app in JSON output\n", appName)
+				continue
+			}
 
 			// TODO: include port and path maybe?
 			appMap[appName] = fmt.Sprintf("%s.%s", appHost, domainName)
