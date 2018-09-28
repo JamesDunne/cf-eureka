@@ -13,6 +13,8 @@ import (
 func execCF(route string, result interface{}) error {
 	// Execute local `cf` curl command:
 	cmd := exec.Command("cf", "curl", route)
+
+	// TODO: capture stderr too?
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return err
@@ -48,6 +50,7 @@ func main() {
 
 	// Get space name from first argument:
 	spaceName := args[0]
+	fmt.Fprintf(os.Stderr, "Query cf for ID of space '%s'\n", spaceName)
 
 	// Look for spaces with the name specified:
 	var spaceResults map[string]interface{}
@@ -71,6 +74,8 @@ func main() {
 	// This is "dev" for "nu"
 	//spaceGuid := "97512eba-2f24-43ce-86f4-f96d3a459ed0"
 
+	fmt.Fprintf(os.Stderr, "Space '%s' has ID '%s'\n", spaceName, spaceGuid)
+
 	appMap := make(map[string]string)
 
 	// Get all the NU space's routes:
@@ -79,11 +84,15 @@ func main() {
 		spaceGuid,
 	)
 
+	pageNumber := 1
 	for nextURL != "" {
 		var results map[string]interface{}
+		fmt.Fprintf(os.Stderr, "Fetching page %d of routes for space...\n", pageNumber)
 		if err := execCF(nextURL, &results); err != nil {
-			panic(err)
+			fmt.Fprintf(os.Stderr, "Error encountered: %v\n", err)
+			return
 		}
+		//fmt.Fprintf(os.Stderr, "Fetched page %d\n", pageNumber)
 
 		resources := results["resources"].([]interface{})
 		for _, r := range resources {
@@ -112,7 +121,7 @@ func main() {
 			appHost := entity["host"].(string)
 			domainName := domainEntity["name"].(string)
 
-			//fmt.Printf("\t%s: %s.%s\n", appName, appHost, domainName)
+			fmt.Fprintf(os.Stderr, "\t%s: '%s.%s'\n", appName, appHost, domainName)
 
 			// TODO: include port and path maybe?
 			appMap[appName] = fmt.Sprintf("%s.%s", appHost, domainName)
@@ -123,9 +132,12 @@ func main() {
 			break
 		}
 		nextURL = results["next_url"].(string)
+		// TODO: we could always just parse nextURL and rip out the `page` query-string parameter.
+		pageNumber++
 	}
 
 	// Send final output as JSON to stdout:
+	fmt.Fprintf(os.Stderr, "Encoding final output as JSON\n")
 	if err := enc.Encode(appMap); err != nil {
 		panic(err)
 	}
