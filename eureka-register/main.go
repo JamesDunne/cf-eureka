@@ -129,19 +129,20 @@ func main() {
 		// POST a body:
 		rsp, err := http.DefaultClient.Post(registerURL.String(), "application/json", body)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s: %v\n", appName, err)
+			fmt.Fprintf(os.Stderr, "error while registering '%s': %v\n", appName, err)
 			continue
 		}
 
 		if rsp.StatusCode < 200 || rsp.StatusCode >= 300 {
-			fmt.Fprintf(os.Stderr, "%s: %v\n", appName, rsp.Status)
+			fmt.Fprintf(os.Stderr, "error while registering '%s': %v\n", appName, rsp.Status)
 			io.Copy(os.Stderr, rsp.Body)
 			fmt.Fprintln(os.Stderr)
 			continue
 		}
 
-		fmt.Printf("Registered %s at '%s'\n", appName, appHost)
+		fmt.Printf("Registered '%s'\n", appName)
 
+		// Configure URL for sending a heartbeat:
 		heartbeatURL := url.URL{
 			Scheme: "http",
 			Host:   fmt.Sprintf("%s:%s", eurekaHost, eurekaPort),
@@ -155,16 +156,16 @@ func main() {
 			for range ticker.C {
 				rsp, err := http.DefaultClient.Do(hbReq)
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "%v\n", err)
+					fmt.Fprintf(os.Stderr, "error while sending heartbeat for '%s': %v\n", appName, err)
 					continue
 				}
 				if rsp.StatusCode < 200 || rsp.StatusCode >= 300 {
-					fmt.Fprintf(os.Stderr, "%s: %v\n", appName, rsp.Status)
+					fmt.Fprintf(os.Stderr, "error while sending heartbeat for '%s': %v\n", appName, rsp.Status)
 					io.Copy(os.Stderr, rsp.Body)
 					fmt.Fprintln(os.Stderr)
 					continue
 				}
-				fmt.Printf("Heartbeat %s\n", appName)
+				//fmt.Printf("Heartbeat %s\n", appName)
 			}
 		}()
 	}
