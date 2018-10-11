@@ -14,10 +14,14 @@ $ go build
 To run it,
 
 ```
-$ ./cf-app-routes dev > dev.json
+$ ./cf-app-routes nu dev > dev.json
 ```
 
-The first and only argument is the name of the CF "space" to query routes for.
+The first argument is the name of the CF "org" to query routes for.
+
+The second argument is the name of the CF "space" to query routes for.
+
+Both the org name and space name are required to avoid naming conflicts among spaces in multiple orgs.
 
 The tool assumes you are already logged in with `cf login` and that the `cf curl` function works and can make authenticated API requests.
 
