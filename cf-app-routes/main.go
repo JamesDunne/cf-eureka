@@ -38,7 +38,7 @@ func execCF(route string, result interface{}) error {
 func main() {
 	args := os.Args[1:]
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "Expected <space name> argument to query routes for")
+		fmt.Fprintln(os.Stderr, "Expected <org name> <space name> arguments to query routes for")
 		os.Exit(1)
 		return
 	}
@@ -48,21 +48,49 @@ func main() {
 	enc.SetEscapeHTML(false)
 	enc.SetIndent("", "  ")
 
-	// Get space name from first argument:
-	spaceName := args[0]
+	// Get org name from first argument:
+	orgName := args[0]
+	fmt.Fprintf(os.Stderr, "Query cf for ID of org '%s'\n", orgName)
+
+	// Look for orgs with the name specified:
+	var orgResults map[string]interface{}
+	execCF("/v2/organizations?q=name:"+url.QueryEscape(orgName), &orgResults)
+
+	orgTotalResults := orgResults["total_results"].(float64)
+	if orgTotalResults == 0 {
+		fmt.Fprintf(os.Stderr, "No orgs found matching name='%s'\n", orgName)
+		os.Exit(2)
+		return
+	}
+	if orgTotalResults > 1 {
+		fmt.Fprintf(os.Stderr, "Too many orgs found matching name='%s'\n", orgName)
+		os.Exit(2)
+		return
+	}
+
+	orgMetadata := orgResults["resources"].([]interface{})[0].(map[string]interface{})["metadata"].(map[string]interface{})
+	orgGuid := orgMetadata["guid"].(string)
+
+	// This is "nu"
+	//orgGuid := "3c5840c6-748b-4da2-8e2b-9d2e685993f1"
+
+	fmt.Fprintf(os.Stderr, "Org '%s' has ID '%s'\n", orgName, orgGuid)
+
+	// Get space name from second argument:
+	spaceName := args[1]
 	fmt.Fprintf(os.Stderr, "Query cf for ID of space '%s'\n", spaceName)
 
-	// Look for spaces with the name specified:
+	// Look for spaces with the name specified within the selected org:
 	var spaceResults map[string]interface{}
-	execCF("/v2/spaces?q=name:"+url.QueryEscape(spaceName), &spaceResults)
+	execCF("/v2/organizations/"+url.QueryEscape(orgGuid)+"/spaces?q=name:"+url.QueryEscape(spaceName), &spaceResults)
 
-	totalResults := spaceResults["total_results"].(float64)
-	if totalResults == 0 {
+	spaceTotalResults := spaceResults["total_results"].(float64)
+	if spaceTotalResults == 0 {
 		fmt.Fprintf(os.Stderr, "No spaces found matching name='%s'\n", spaceName)
 		os.Exit(2)
 		return
 	}
-	if totalResults > 1 {
+	if spaceTotalResults > 1 {
 		fmt.Fprintf(os.Stderr, "Too many spaces found matching name='%s'\n", spaceName)
 		os.Exit(2)
 		return
