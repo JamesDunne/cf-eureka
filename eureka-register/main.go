@@ -91,7 +91,7 @@ func main() {
 					"$":        strconv.Itoa(port),
 				},
 				"securePort": map[string]interface{}{
-					"@enabled": false,
+					"@enabled": true,
 					"$":        "443",
 				},
 				"dataCenterInfo": map[string]interface{}{
@@ -107,7 +107,7 @@ func main() {
 				"homePageUrl":      fmt.Sprintf("http://%s/", appHost),
 				"statusPageUrl":    fmt.Sprintf("http://%s/info", appHost),
 				"healthCheckUrl":   fmt.Sprintf("http://%s/health", appHost),
-				// "secureHealthCheckUrl": fmt.Sprintf("http://%s/health", appHost),
+				"secureHealthCheckUrl": fmt.Sprintf("https://%s/health", appHost),
 			},
 		}
 		b, err := json.Marshal(&register)
