@@ -136,6 +136,8 @@ func main() {
 			// entity.domain.entity.name
 
 			entity := rs["entity"].(map[string]interface{})
+			//json.NewEncoder(os.Stderr).Encode(entity)
+
 			domainEntity := entity["domain"].(map[string]interface{})["entity"].(map[string]interface{})
 
 			apps := entity["apps"].([]interface{})
