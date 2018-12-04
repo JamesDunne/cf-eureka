@@ -16,6 +16,9 @@ import (
 	"time"
 )
 
+const securePortEnabled = true
+const nonSecurePortEnabled = false
+
 func main() {
 	args := os.Args[1:]
 	if len(args) < 1 {
@@ -87,11 +90,11 @@ func main() {
 				"hostName":   appHost,
 				"ipAddr":     ipAddr,
 				"port": map[string]interface{}{
-					"@enabled": true,
+					"@enabled": nonSecurePortEnabled,
 					"$":        strconv.Itoa(port),
 				},
 				"securePort": map[string]interface{}{
-					"@enabled": true,
+					"@enabled": securePortEnabled,
 					"$":        "443",
 				},
 				"dataCenterInfo": map[string]interface{}{
