@@ -12,12 +12,23 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
 const securePortEnabled = true
 const nonSecurePortEnabled = false
+
+func stringsContains(l []string, m string) bool {
+	for _, t := range l {
+		if t == m {
+			return true
+		}
+	}
+	return false
+}
 
 func main() {
 	args := os.Args[1:]
@@ -26,6 +37,20 @@ func main() {
 		os.Exit(1)
 		return
 	}
+
+	// Fetch excluded app names from env var "EXCLUDED_APPS":
+	excludedAppNames := strings.Split(os.Getenv("EXCLUDED_APPS"), ",")
+
+	// Add in nu-edge-server and ui-gateway if they're not already included:
+	if !stringsContains(excludedAppNames, "nu-edge-server") {
+		excludedAppNames = append(excludedAppNames, "nu-edge-server")
+	}
+	if !stringsContains(excludedAppNames, "ui-gateway") {
+		excludedAppNames = append(excludedAppNames, "ui-gateway")
+	}
+
+	// Sort, why not?
+	sort.Strings(excludedAppNames)
 
 	// Create JSON encoder to write to stdout:
 	enc := json.NewEncoder(os.Stdout)
@@ -66,6 +91,19 @@ func main() {
 
 	for k, v := range routesMap {
 		appName, appHost := k, v
+
+		// Skip certain apps we don't want to register in eureka:
+		skip := false
+		for _, excludeAppName := range excludedAppNames {
+			if appName == excludeAppName {
+				skip = true
+				break
+			}
+		}
+		if skip {
+			fmt.Fprintf(os.Stderr, "Excluding '%s' app from registration\n", appName)
+			continue
+		}
 
 		// Resolve the IPv4 address of the host for registration with eureka:
 		ip, err := net.ResolveIPAddr("ip4", appHost)
